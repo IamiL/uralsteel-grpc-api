@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package llm;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "proto/llm";
+
+enum Role {
+  user = 0;
+  assistant = 1;
+  system = 2;
+  tool = 3;
+}
+
+message Message {
+  Role  role = 1;
+  string body = 2;
+}
+
+message NewMessageRequest {
+  string  msg = 1;
+  repeated Message history = 2;
+}
+
+enum NewMessageResponseType {
+  first = 0;
+  middle = 1;
+  last = 2;
+}
+
+message NewMessageResponse {
+  NewMessageResponseType type = 1;
+  optional string body = 2;
+  optional int32 msg_number = 3;
+}
+
+service Llm {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  rpc NewMessage(NewMessageRequest) returns (stream NewMessageResponse);
+}
