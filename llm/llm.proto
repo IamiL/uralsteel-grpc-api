@@ -36,12 +36,18 @@ message Message {
   string body = 2;   // Текст сообщения (цифра 2 - номер поля, должен быть уникальным в рамках message)
 }
 
+enum NewMessageRequestType {
+  start = 0;
+  stop = 1;
+}
+
 // NewMessageRequest - запрос на отправку нового сообщения в чат с языковой моделью.
 // Этот тип используется клиентом для передачи данных на сервер.
 message NewMessageRequest {
   string  msg = 1;                // Текущее сообщение от пользователя
   repeated Message history = 2;   // История предыдущих сообщений (repeated = массив/список)
                                   // Передается для контекста беседы
+  NewMessageRequestType type = 3;
 }
 
 // NewMessageResponseType определяет тип части ответа при потоковой передаче.
@@ -67,7 +73,6 @@ message NewMessageResponse {
 // Service определяет API сервиса - набор удаленных процедур (RPC), которые можно вызвать.
 // Это аналог интерфейса в программировании.
 service Llm {
-
   // Ping - простой метод для проверки работоспособности сервиса.
   // Принимает: пустой объект (Empty)
   // Возвращает: пустой объект (Empty)
@@ -79,5 +84,5 @@ service Llm {
   // Возвращает: поток (stream) из NewMessageResponse
   // Ключевое слово "stream" означает, что сервер будет отправлять множество ответов
   // для одного запроса, что позволяет получать текст по мере его генерации.
-  rpc NewMessage(NewMessageRequest) returns (stream NewMessageResponse);
+  rpc NewMessage(stream NewMessageRequest) returns (stream NewMessageResponse);
 }
