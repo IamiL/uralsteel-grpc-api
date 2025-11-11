@@ -1,3 +1,9 @@
+// !!!
+// Пришлось изменить логику ответов из-за урезанного openai api Яндекса и
+// необходимости совместимости с этим openai api в случае прочих провайдеров инференса.
+// А вот прерывание генерации не требует изменений, просто клиенту надо отменить вызов и
+// сервис это заметит через контекст.
+
 // Версия синтаксиса Protocol Buffers (используется proto3 - современная версия)
 syntax = "proto3";
 
@@ -44,20 +50,32 @@ message NewMessageRequest {
                                   // Передается для контекста беседы
 }
 
-// NewMessageResponseType определяет тип части ответа при потоковой передаче.
-// Когда языковая модель генерирует ответ, он отправляется частями (streaming).
-enum NewMessageResponseType {
-  first = 0;   // Первая часть ответа (начало генерации)
-  middle = 1;  // Промежуточная часть ответа (продолжение генерации)
-  last = 2;    // Последняя часть ответа (конец генерации)
+// GenerateResponseType содержит данные для промежуточных частей ответа.
+message GenerateResponseType {
+  optional string content = 1;
+  optional string reasoning_content = 2;
+  // Время генерации этой части
+  string datetime = 3;
+}
+
+// CompleteResponseType содержит статистику токенов по завершении генерации.
+message CompleteResponseType {
+  optional int32 prompt_tokens = 1;
+  optional int32 completion_tokens = 2;
+  optional int32 total_tokens = 3;
+  // Время завершения
+  string datetime = 4;
 }
 
 // NewMessageResponse - ответ от языковой модели при потоковой генерации текста.
 // Сервер отправляет множество таких сообщений для одного запроса (stream).
 message NewMessageResponse {
-  NewMessageResponseType type = 1;  // Тип части ответа (первая/промежуточная/последняя)
-  optional string body = 2;         // Сгенерированный текст (optional = может отсутствовать)
-  optional int32 msg_number = 3;    // Номер сообщения в диалоге (опциональное целое число)
+  // В теле ответа может быть либо сгенерированный контент (GenerateResponseType),
+  // либо финальная информация о завершении (CompleteResponseType).
+  oneof response {
+    GenerateResponseType generate = 1;
+    CompleteResponseType complete = 2;
+  }
 }
 
 // ============================================================================
