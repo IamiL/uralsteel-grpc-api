@@ -44,10 +44,36 @@ message Message {
 
 // NewMessageRequest - запрос на отправку нового сообщения в чат с языковой моделью.
 // Этот тип используется клиентом для передачи данных на сервер.
+// NewMessageRequest - запрос на отправку нового сообщения в чат с языковой моделью.
+// Поддерживает два режима передачи:
+// 1) Текстовое сообщение — клиент отправляет один пакет с текстом.
+// 2) Аудиофайл (строго mp3) — клиент передаёт поток чанков (stream).
+// При использовании аудио-потока клиент отправляет несколько сообщений NewMessageRequest,
+// каждое из которых содержит поле mp3_chunk с частью байтов файла. Сервер считает все
+// чанки, собирает их и при завершении обработки отвечает обычным потоком NewMessageResponse.
 message NewMessageRequest {
-  string  msg = 1;                // Текущее сообщение от пользователя
-  repeated Message history = 2;   // История предыдущих сообщений (repeated = массив/список)
-                                  // Передается для контекста беседы
+  // payload — либо текстовое сообщение, либо кусок аудиофайла
+  oneof payload {
+    // Текстовое сообщение (отправляется в одном пакете)
+    string msg = 1;
+
+    // Чанк аудиофайла (может передаваться много раз в потоке)
+    bytes mp3_chunk = 2;
+  }
+
+  // История предыдущих сообщений (можно передать в первом пакете при отправке аудио,
+  // или вместе с текстовым сообщением).
+  repeated Message history = 3;
+  optional string text2text_model = 4;
+  optional string speech2text_model = 5;
+}
+
+// TranscribeResponseType содержит транскрипцию запроса.
+message TranscribeResponseType {
+  string transcription = 1;
+  optional float duration = 2;
+  // Время завершения транскрибации
+  string datetime = 3;
 }
 
 // GenerateResponseType содержит данные для промежуточных частей ответа.
@@ -67,14 +93,20 @@ message CompleteResponseType {
   string datetime = 4;
 }
 
+// ModelsListResponse содержит список доступных моделей.
+message ModelsListResponse {
+  repeated string models = 1;  // Список названий моделей
+}
+
 // NewMessageResponse - ответ от языковой модели при потоковой генерации текста.
 // Сервер отправляет множество таких сообщений для одного запроса (stream).
 message NewMessageResponse {
   // В теле ответа может быть либо сгенерированный контент (GenerateResponseType),
   // либо финальная информация о завершении (CompleteResponseType).
   oneof response {
-    GenerateResponseType generate = 1;
-    CompleteResponseType complete = 2;
+    TranscribeResponseType transcribe = 1;
+    GenerateResponseType generate = 2;
+    CompleteResponseType complete = 3;
   }
 }
 
@@ -92,9 +124,19 @@ service Llm {
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 
   // NewMessage - метод для отправки сообщения языковой модели и получения ответа.
-  // Принимает: NewMessageRequest (сообщение пользователя + история)
-  // Возвращает: поток (stream) из NewMessageResponse
-  // Ключевое слово "stream" означает, что сервер будет отправлять множество ответов
-  // для одного запроса, что позволяет получать текст по мере его генерации.
-  rpc NewMessage(NewMessageRequest) returns (stream NewMessageResponse);
+  // Принимает: поток из NewMessageRequest — это позволяет передавать либо одно
+  // текстовое сообщение, либо поток чанков аудиофайла (для больших mp3).
+  // Возвращает: поток (stream) из NewMessageResponse — сервер будет отправлять
+  // промежуточные части генерации и финальную статистику по мере готовности.
+  rpc NewMessage(stream NewMessageRequest) returns (stream NewMessageResponse);
+
+  // AvailableModelsText2Text - получить список доступных Text2Text моделей.
+  // Принимает: пустой объект (Empty)
+  // Возвращает: ModelsListResponse со списком моделей
+  rpc AvailableModelsText2Text(google.protobuf.Empty) returns (ModelsListResponse);
+
+  // AvailableModelsSpeech2Text - получить список доступных Speech2Text моделей.
+  // Принимает: пустой объект (Empty)
+  // Возвращает: ModelsListResponse со списком моделей
+  rpc AvailableModelsSpeech2Text(google.protobuf.Empty) returns (ModelsListResponse);
 }
