@@ -89,8 +89,9 @@ message CompleteResponseType {
   optional int32 prompt_tokens = 1;
   optional int32 completion_tokens = 2;
   optional int32 total_tokens = 3;
+  float expected_cost_usd = 4;
   // Время завершения
-  string datetime = 4;
+  string datetime = 5;
 }
 
 // ModelsListResponse содержит список доступных моделей.
