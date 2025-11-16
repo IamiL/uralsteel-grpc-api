@@ -86,9 +86,9 @@ message GenerateResponseType {
 
 // CompleteResponseType содержит статистику токенов по завершении генерации.
 message CompleteResponseType {
-  optional int32 prompt_tokens = 1;
-  optional int32 completion_tokens = 2;
-  optional int32 total_tokens = 3;
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
   float expected_cost_usd = 4;
   // Время завершения
   string datetime = 5;
