@@ -122,8 +122,25 @@ message FunctionCallComplete {
 }
 
 // ToolMetadataResponse содержит метаданные инструмента.
+// Может содержать либо список URL из веб-поиска, либо сгенерированное изображение.
 message ToolMetadataResponse {
-  string content = 1;  // Содержимое метаданных инструмента
+  oneof metadata {
+    // Список URL из результатов веб-поиска
+    ToolWebSearchMetadata websearch = 1;
+    // Сгенерированное изображение с информацией о стоимости
+    ToolImageGenMetadata image_gen = 2;
+  }
+}
+
+// ToolWebSearchMetadata содержит список URL из веб-поиска.
+message ToolWebSearchMetadata {
+  repeated string url_list = 1;  // Список URL из результатов поиска
+}
+
+// ToolImageGenMetadata содержит сгенерированное изображение.
+message ToolImageGenMetadata {
+  string image_base64 = 1;      // Изображение в формате Base64
+  float expected_cost = 2;      // Ожидаемая стоимость генерации изображения
 }
 
 // StringsListResponse содержит список доступных моделей.
