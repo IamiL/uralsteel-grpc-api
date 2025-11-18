@@ -66,14 +66,16 @@ message NewMessageRequest {
   repeated Message history = 3;
   optional string text2text_model = 4;
   optional string speech2text_model = 5;
+  optional string function = 6;
 }
 
 // TranscribeResponseType содержит транскрипцию запроса.
 message TranscribeResponseType {
   string transcription = 1;
-  optional float duration = 2;
+  float duration = 2;
+  float expected_cost_usd = 3;
   // Время завершения транскрибации
-  string datetime = 3;
+  string datetime = 4;
 }
 
 // GenerateResponseType содержит данные для промежуточных частей ответа.
@@ -94,20 +96,50 @@ message CompleteResponseType {
   string datetime = 5;
 }
 
-// ModelsListResponse содержит список доступных моделей.
-message ModelsListResponse {
-  repeated string models = 1;  // Список названий моделей
+// FunctionCallAdded содержит информацию о начале вызова функции.
+message FunctionCallAdded {
+  string id = 1;     // Уникальный идентификатор вызова функции
+  string name = 2;   // Название функции
+}
+
+// FunctionCallDelta содержит промежуточные данные при генерации аргументов функции.
+message FunctionCallDelta {
+  string id = 1;        // Уникальный идентификатор вызова функции
+  string content = 2;   // Промежуточная часть аргументов (обычно JSON)
+}
+
+// FunctionCallDone содержит завершенные аргументы функции.
+message FunctionCallDone {
+  string id = 1;          // Уникальный идентификатор вызова функции
+  string arguments = 2;   // Полные аргументы функции (JSON)
+}
+
+// FunctionCallComplete содержит полную информацию о завершенном вызове функции.
+message FunctionCallComplete {
+  string id = 1;          // Уникальный идентификатор вызова функции
+  string name = 2;        // Название функции
+  string arguments = 3;   // Полные аргументы функции (JSON)
+}
+
+// StringsListResponse содержит список доступных моделей.
+message StringsListResponse {
+  repeated string strings = 1;  // Список названий моделей
 }
 
 // NewMessageResponse - ответ от языковой модели при потоковой генерации текста.
 // Сервер отправляет множество таких сообщений для одного запроса (stream).
 message NewMessageResponse {
   // В теле ответа может быть либо сгенерированный контент (GenerateResponseType),
-  // либо финальная информация о завершении (CompleteResponseType).
+  // либо финальная информация о завершении (CompleteResponseType), либо информация
+  // о вызове функции (FunctionCallAdded/Delta/Done/Complete).
   oneof response {
     TranscribeResponseType transcribe = 1;
     GenerateResponseType generate = 2;
     CompleteResponseType complete = 3;
+    FunctionCallAdded function_call_added = 4;
+    FunctionCallDelta function_call_delta = 5;
+    FunctionCallDone function_call_done = 6;
+    FunctionCallComplete function_call_complete = 7;
   }
 }
 
@@ -133,11 +165,16 @@ service Llm {
 
   // AvailableModelsText2Text - получить список доступных Text2Text моделей.
   // Принимает: пустой объект (Empty)
-  // Возвращает: ModelsListResponse со списком моделей
-  rpc AvailableModelsText2Text(google.protobuf.Empty) returns (ModelsListResponse);
+  // Возвращает: StringsListResponse со списком моделей
+  rpc AvailableModelsText2Text(google.protobuf.Empty) returns (StringsListResponse);
 
   // AvailableModelsSpeech2Text - получить список доступных Speech2Text моделей.
   // Принимает: пустой объект (Empty)
-  // Возвращает: ModelsListResponse со списком моделей
-  rpc AvailableModelsSpeech2Text(google.protobuf.Empty) returns (ModelsListResponse);
+  // Возвращает: StringsListResponse со списком моделей
+  rpc AvailableModelsSpeech2Text(google.protobuf.Empty) returns (StringsListResponse);
+
+  // AvailableTools - получить список доступных инструментов/функций.
+  // Принимает: пустой объект (Empty)
+  // Возвращает: StringsListResponse со списком названий инструментов
+  rpc AvailableTools(google.protobuf.Empty) returns (StringsListResponse);
 }
