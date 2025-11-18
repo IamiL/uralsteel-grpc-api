@@ -121,6 +121,11 @@ message FunctionCallComplete {
   string arguments = 3;   // Полные аргументы функции (JSON)
 }
 
+// ToolMetadataResponse содержит метаданные инструмента.
+message ToolMetadataResponse {
+  string content = 1;  // Содержимое метаданных инструмента
+}
+
 // StringsListResponse содержит список доступных моделей.
 message StringsListResponse {
   repeated string strings = 1;  // Список названий моделей
@@ -131,7 +136,7 @@ message StringsListResponse {
 message NewMessageResponse {
   // В теле ответа может быть либо сгенерированный контент (GenerateResponseType),
   // либо финальная информация о завершении (CompleteResponseType), либо информация
-  // о вызове функции (FunctionCallAdded/Delta/Done/Complete).
+  // о вызове функции (FunctionCallAdded/Delta/Done/Complete), либо метаданные инструмента (строка с json).
   oneof response {
     TranscribeResponseType transcribe = 1;
     GenerateResponseType generate = 2;
@@ -140,6 +145,7 @@ message NewMessageResponse {
     FunctionCallDelta function_call_delta = 5;
     FunctionCallDone function_call_done = 6;
     FunctionCallComplete function_call_complete = 7;
+    ToolMetadataResponse tool_metadata = 8;
   }
 }
 
