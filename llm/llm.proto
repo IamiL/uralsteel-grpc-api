@@ -155,7 +155,10 @@ message ToolImageGenMetadata {
 // ChatNameResponseType содержит сгенерированное название чата.
 message ChatNameResponseType {
   string name = 1;              // Название чата
-  float expected_cost_usd = 2;  // Ожидаемая стоимость генерации названия
+  int32 prompt_tokens = 2;
+  int32 completion_tokens = 3;
+  int32 total_tokens = 4;
+  float expected_cost_usd = 5;  // Ожидаемая стоимость генерации названия
 }
 
 // MarkdownChunkResponseType содержит часть обработанного markdown документа.
