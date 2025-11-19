@@ -67,6 +67,15 @@ message NewMessageRequest {
   optional string text2text_model = 4;
   optional string speech2text_model = 5;
   optional string function = 6;
+  // URL-ы впервые отправленных док-ов (можно передать в первом пакете при отправке аудио,
+  // или вместе с текстовым сообщением).
+  repeated string documents_urls = 7;
+  // URL-ы изображений для контекста (можно передать в первом пакете при отправке аудио,
+  // или вместе с текстовым сообщением).
+  repeated string images_urls = 8;
+  // URL-ы md док-ов, оригиналы которых помним (можно передать в первом пакете при отправке аудио,
+  // или вместе с текстовым сообщением).
+  repeated string markdown_urls = 9;
 }
 
 // TranscribeResponseType содержит транскрипцию запроса.
@@ -143,6 +152,18 @@ message ToolImageGenMetadata {
   float expected_cost = 2;      // Ожидаемая стоимость генерации изображения
 }
 
+// ChatNameResponseType содержит сгенерированное название чата.
+message ChatNameResponseType {
+  string name = 1;              // Название чата
+  float expected_cost_usd = 2;  // Ожидаемая стоимость генерации названия
+}
+
+// MarkdownChunkResponseType содержит часть обработанного markdown документа.
+message MarkdownChunkResponseType {
+  string markdown_chunk = 1;    // Часть markdown контента
+  string original_url = 2;      // URL оригинального документа
+}
+
 // StringsListResponse содержит список доступных моделей.
 message StringsListResponse {
   repeated string strings = 1;  // Список названий моделей
@@ -153,7 +174,9 @@ message StringsListResponse {
 message NewMessageResponse {
   // В теле ответа может быть либо сгенерированный контент (GenerateResponseType),
   // либо финальная информация о завершении (CompleteResponseType), либо информация
-  // о вызове функции (FunctionCallAdded/Delta/Done/Complete), либо метаданные инструмента (строка с json).
+  // о вызове функции (FunctionCallAdded/Delta/Done/Complete), либо метаданные инструмента,
+  // либо название чата для новых диалогов (ChatNameResponseType), либо обработанная часть
+  // markdown документа (MarkdownChunkResponseType).
   oneof response {
     TranscribeResponseType transcribe = 1;
     GenerateResponseType generate = 2;
@@ -163,6 +186,8 @@ message NewMessageResponse {
     FunctionCallDone function_call_done = 6;
     FunctionCallComplete function_call_complete = 7;
     ToolMetadataResponse tool_metadata = 8;
+    ChatNameResponseType chat_name = 9;
+    MarkdownChunkResponseType markdown_chunk = 10;
   }
 }
 
