@@ -165,6 +165,7 @@ message ChatNameResponseType {
 message MarkdownChunkResponseType {
   string markdown_chunk = 1;    // Часть markdown контента
   string original_url = 2;      // URL оригинального документа
+  string original_name = 3;     // название оригинального документа
 }
 
 // StringsListResponse содержит список доступных моделей.
