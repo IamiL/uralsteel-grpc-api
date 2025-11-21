@@ -58,30 +58,27 @@ message MarkdownUrl {
 // каждое из которых содержит поле mp3_chunk с частью байтов файла. Сервер считает все
 // чанки, собирает их и при завершении обработки отвечает обычным потоком NewMessageResponse.
 message NewMessageRequest {
-  // payload — либо текстовое сообщение, либо кусок аудиофайла
-  oneof payload {
-    // Текстовое сообщение (отправляется в одном пакете)
-    string msg = 1;
+  // Текстовое сообщение (одиночное)
+  string msg = 1;
 
-    // Чанк аудиофайла (может передаваться много раз в потоке)
-    bytes mp3_chunk = 2;
-  }
-
-  // История предыдущих сообщений (можно передать в первом пакете при отправке аудио,
-  // или вместе с текстовым сообщением).
-  repeated Message history = 3;
-  optional string text2text_model = 4;
-  optional string speech2text_model = 5;
-  optional string function = 6;
-  // URL-ы впервые отправленных док-ов (можно передать в первом пакете при отправке аудио,
-  // или вместе с текстовым сообщением).
-  repeated string documents_urls = 7;
-  // URL-ы изображений для контекста (можно передать в первом пакете при отправке аудио,
-  // или вместе с текстовым сообщением).
-  repeated string images_urls = 8;
+  // История предыдущих сообщений
+  repeated Message history = 2;
+  optional string text2text_model = 3;
+  optional string function = 4;
+  // URL-ы впервые отправленных док-ов
+  repeated string documents_urls = 5;
+  // URL-ы изображений для контекста
+  repeated string images_urls = 6;
   // Markdown версии документов с сохранением оригинальных имён
-  // (можно передать в первом пакете при отправке аудио или вместе с текстовым сообщением).
-  repeated MarkdownUrl markdown_urls = 9;
+  repeated MarkdownUrl markdown_urls = 7;
+}
+
+// Отдельный запрос для транскрибации аудио
+message TranscribeRequest {
+  // Чанк аудиофайла mp3
+  bytes mp3_chunk = 1;
+  // Опциональная переопределяемая модель распознавания
+  optional string speech2text_model = 2;
 }
 
 // TranscribeResponseType содержит транскрипцию запроса.
@@ -188,17 +185,21 @@ message NewMessageResponse {
   // либо название чата для новых диалогов (ChatNameResponseType), либо обработанная часть
   // markdown документа (MarkdownChunkResponseType).
   oneof response {
-    TranscribeResponseType transcribe = 1;
-    GenerateResponseType generate = 2;
-    CompleteResponseType complete = 3;
-    FunctionCallAdded function_call_added = 4;
-    FunctionCallDelta function_call_delta = 5;
-    FunctionCallDone function_call_done = 6;
-    FunctionCallComplete function_call_complete = 7;
-    ToolMetadataResponse tool_metadata = 8;
-    ChatNameResponseType chat_name = 9;
-    MarkdownChunkResponseType markdown_chunk = 10;
+    GenerateResponseType generate = 1;
+    CompleteResponseType complete = 2;
+    FunctionCallAdded function_call_added = 3;
+    FunctionCallDelta function_call_delta = 4;
+    FunctionCallDone function_call_done = 5;
+    FunctionCallComplete function_call_complete = 6;
+    ToolMetadataResponse tool_metadata = 7;
+    ChatNameResponseType chat_name = 8;
+    MarkdownChunkResponseType markdown_chunk = 9;
   }
+}
+
+// Отдельный ответ для транскрибации
+message TranscribeResponse {
+  TranscribeResponseType transcribe = 1;
 }
 
 // ============================================================================
@@ -215,11 +216,15 @@ service Llm {
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 
   // NewMessage - метод для отправки сообщения языковой модели и получения ответа.
-  // Принимает: поток из NewMessageRequest — это позволяет передавать либо одно
-  // текстовое сообщение, либо поток чанков аудиофайла (для больших mp3).
+  // Принимает: одиночный NewMessageRequest.
   // Возвращает: поток (stream) из NewMessageResponse — сервер будет отправлять
   // промежуточные части генерации и финальную статистику по мере готовности.
-  rpc NewMessage(stream NewMessageRequest) returns (stream NewMessageResponse);
+  rpc NewMessage(NewMessageRequest) returns (stream NewMessageResponse);
+
+  // Transcribe - метод для отправки только аудио и получения транскрипции без генерации
+  // Принимает: поток TranscribeRequest с mp3_chunk
+  // Возвращает: одиночный TranscribeResponse с результатом транскрибации
+  rpc Transcribe(stream TranscribeRequest) returns (TranscribeResponse);
 
   // AvailableModelsText2Text - получить список доступных Text2Text моделей.
   // Принимает: пустой объект (Empty)
