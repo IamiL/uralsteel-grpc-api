@@ -18,30 +18,6 @@ import "google/protobuf/empty.proto";
 // Опция для генерации Go-кода: указывает путь к пакету в Go-проекте.
 option go_package = "proto/llm";
 
-// ============================================================================
-// ПЕРЕЧИСЛЕНИЯ (ENUM)
-// ============================================================================
-
-// Перечисление Role определяет роли участников диалога с языковой моделью.
-// В proto3 первое значение всегда должно быть 0.
-enum Role {
-  user = 0;       // Пользователь - человек, задающий вопросы
-  assistant = 1;  // Ассистент - языковая модель, отвечающая на вопросы
-  system = 2;     // Системная роль - инструкции для поведения модели
-  tool = 3;       // Инструмент - ответы от внешних инструментов/функций
-}
-
-// ============================================================================
-// СТРУКТУРЫ ДАННЫХ (MESSAGE)
-// ============================================================================
-
-// Message представляет одно сообщение в диалоге.
-// В протобуфах message - это структура данных, аналог struct в Go или class в других языках.
-message Message {
-  Role  role = 1;    // Роль отправителя сообщения (цифра 1 - это уникальный номер поля)
-  string body = 2;   // Текст сообщения (цифра 2 - номер поля, должен быть уникальным в рамках message)
-}
-
 // MarkdownUrl содержит URL и оригинальное имя markdown документа.
 message MarkdownUrl {
   string original_name = 1;  // Название оригинального документа
@@ -60,9 +36,8 @@ message MarkdownUrl {
 message NewMessageRequest {
   // Текстовое сообщение (одиночное)
   string msg = 1;
-
   // История предыдущих сообщений
-  repeated Message history = 2;
+  repeated string history = 2;
   optional string text2text_model = 3;
   optional string function = 4;
   // URL-ы впервые отправленных док-ов
@@ -194,6 +169,8 @@ message NewMessageResponse {
     ToolMetadataResponse tool_metadata = 7;
     ChatNameResponseType chat_name = 8;
     MarkdownChunkResponseType markdown_chunk = 9;
+    string user_message_uid = 10;
+    string llm_message_uid = 11;
   }
 }
 
