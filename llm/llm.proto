@@ -119,9 +119,15 @@ message ToolMetadataResponse {
   }
 }
 
-// ToolWebSearchMetadata содержит список URL из веб-поиска.
+// ToolWebSearchMetadata содержит список результатов веб-поиска.
 message ToolWebSearchMetadata {
-  repeated string url_list = 1;  // Список URL из результатов поиска
+  repeated ToolWebSearchMetadataItem item = 1;
+}
+
+// URL + Title из веб-поиска.
+message ToolWebSearchMetadataItem {
+  string url = 1;
+  string title = 2;
 }
 
 // ToolImageGenMetadata содержит сгенерированное изображение.
